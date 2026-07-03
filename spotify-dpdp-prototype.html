@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spotify × DPDP — Consent Flow Prototype</title>
+<style>
+  :root {
+    --green: #1DB954;
+    --black: #191414;
+    --darkgray: #212121;
+    --midgray: #535353;
+    --lightgray: #B3B3B3;
+    --card: #282828;
+    --offwhite: #FAFAFA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #0d0d0d 0%, #191414 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 60px;
+    color: #fff;
+  }
+  h1.pagetitle { font-size: 22px; margin: 0 0 4px; font-weight: 700; }
+  p.pagesub { color: var(--lightgray); font-size: 13px; margin: 0 0 24px; text-align: center; max-width: 480px; }
+  .journey-switch {
+    display: flex; gap: 8px; margin-bottom: 28px; background: #000; padding: 4px; border-radius: 30px;
+  }
+  .journey-switch button {
+    border: none; background: transparent; color: var(--lightgray); padding: 8px 18px; border-radius: 26px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .journey-switch button.active { background: var(--green); color: #000; }
+
+  .phone {
+    width: 360px; min-height: 640px; background: var(--black); border-radius: 32px;
+    padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.5); position: relative; overflow: hidden;
+    border: 6px solid #000;
+  }
+  .notch { width: 100px; height: 18px; background: #000; border-radius: 0 0 14px 14px; margin: -18px auto 14px; }
+  .screen { display: none; flex-direction: column; height: 100%; min-height: 580px; animation: fade .25s ease; }
+  .screen.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
+
+  .stepbar { display: flex; gap: 5px; margin-bottom: 20px; }
+  .stepbar div { flex: 1; height: 3px; border-radius: 2px; background: #3a3a3a; }
+  .stepbar div.done { background: var(--green); }
+
+  .logo { display:flex; align-items:center; gap:8px; margin-bottom: 18px; }
+  .logo .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--green); display:flex; align-items:center; justify-content:center; font-weight:900; color:#000; font-size:14px;}
+  .logo span { font-weight: 700; font-size: 15px; }
+
+  h2 { font-size: 20px; margin: 4px 0 6px; }
+  p.desc { color: var(--lightgray); font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
+
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 11px; color: var(--lightgray); display:block; margin-bottom: 5px; }
+  .field input { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #3a3a3a; background: #121212; color: #fff; font-size: 14px; }
+
+  .toggle-row {
+    display:flex; align-items:flex-start; justify-content: space-between; gap: 12px;
+    background: var(--card); border-radius: 10px; padding: 14px; margin-bottom: 10px;
+  }
+  .toggle-row .t-title { font-size: 13.5px; font-weight: 600; margin-bottom: 3px; }
+  .toggle-row .t-desc { font-size: 11px; color: var(--lightgray); line-height: 1.4; }
+  .toggle-row .tag { display:inline-block; font-size: 9.5px; background:#3a3a3a; color:var(--lightgray); padding:2px 7px; border-radius:10px; margin-top:6px; }
+  .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; margin-top: 2px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider-el {
+    position:absolute; cursor:pointer; inset:0; background:#4d4d4d; border-radius: 24px; transition:.2s;
+  }
+  .slider-el:before {
+    content:""; position:absolute; height:18px; width:18px; left:3px; top:3px; background:white; border-radius:50%; transition:.2s;
+  }
+  input:checked + .slider-el { background: var(--green); }
+  input:checked + .slider-el:before { transform: translateX(18px); }
+  input:disabled + .slider-el { opacity: .55; cursor: not-allowed; }
+
+  .btn {
+    background: var(--green); color: #000; border: none; padding: 13px; border-radius: 30px;
+    font-weight: 700; font-size: 14px; cursor: pointer; width: 100%; margin-top: auto;
+    transition: transform .1s;
+  }
+  .btn:hover { transform: scale(1.015); }
+  .btn.secondary { background: transparent; color: var(--lightgray); border: 1px solid #3a3a3a; margin-top: 8px; }
+  .btn.small { padding: 10px; font-size: 12.5px; }
+
+  .spacer { flex: 1; }
+
+  .center-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--green); display:flex; align-items:center; justify-content:center; margin: 10px auto 18px; font-size: 30px; color:#000;}
+  .center-icon.dark { background: var(--card); color: var(--green); border: 2px solid var(--green); }
+
+  .yn-row { display:flex; gap: 10px; margin-bottom: 20px; }
+  .yn-row button {
+    flex:1; padding: 14px; border-radius: 10px; border: 1px solid #3a3a3a; background: var(--card); color:#fff;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .yn-row button:hover { border-color: var(--green); }
+
+  .otp-boxes { display:flex; gap: 8px; justify-content:center; margin: 22px 0; }
+  .otp-boxes input {
+    width: 42px; height: 50px; text-align:center; font-size: 20px; border-radius: 8px; border: 1px solid #3a3a3a;
+    background: #121212; color:#fff;
+  }
+
+  .banner { background: var(--card); border-radius: 10px; padding: 12px 14px; font-size: 11.5px; color: var(--lightgray); margin-bottom: 16px; display:flex; gap:10px; align-items:flex-start;}
+  .banner .b-icon { color: var(--green); font-size: 15px; }
+
+  .footlink { text-align:center; font-size: 11px; color: var(--lightgray); margin-top: 14px; cursor: pointer; text-decoration: underline; }
+  .center-text { text-align:center; }
+  .badge-off { color: #ff6b6b; }
+  .badge-on { color: var(--green); }
+</style>
+</head>
+<body>
+
+<h1 class="pagetitle">🎧 Spotify — Consent & Data Flow Prototype</h1>
+<p class="pagesub">Clickable, happy-path only. Choose a journey below, then click through each screen.</p>
+
+<div class="journey-switch">
+  <button id="btn-adult" class="active" onclick="switchJourney('adult')">Adult Signup (Ananya)</button>
+  <button id="btn-minor" onclick="switchJourney('minor')">Family Plan Minor (Rohan)</button>
+</div>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- ================= ADULT JOURNEY ================= -->
+  <div id="adult-1" class="screen active">
+    <div class="logo"><div class="dot">♫</div><span>Spotify</span></div>
+    <div class="stepbar"><div class="done"></div><div></div><div></div></div>
+    <h2>Create your account</h2>
+    <p class="desc">Free, ad-supported. Listen to millions of songs on your phone, speaker, or web.</p>
+    <div class="field"><label>Email address</label><input type="text" value="ananya.rao@gmail.com" readonly></div>
+    <div class="field"><label>Password</label><input type="password" value="••••••••" readonly></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('adult-2')">Continue</button>
+  </div>
+
+  <div id="adult-2" class="screen">
+    <div class="logo"><div class="dot">♫</div><span>Spotify</span></div>
+    <div class="stepbar"><div class="done"></div><div class="done"></div><div></div></div>
+    <h2>Your Privacy Choices</h2>
+    <p class="desc">These are separate, itemized choices — not one bundled checkbox. You can change any of them later.</p>
+
+    <div class="toggle-row">
+      <div>
+        <div class="t-title">Core functionality</div>
+        <div class="t-desc">Account, playback, playlists. Needed to use Spotify.</div>
+        <span class="tag">Required</span>
+      </div>
+      <label class="switch"><input type="checkbox" checked disabled><span class="slider-el"></span></label>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="t-title">Personalization</div>
+        <div class="t-desc">Discover Weekly, recommendations based on your listening.</div>
+        <span class="tag">On by default · withdrawable</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="tg-personalization" checked><span class="slider-el"></span></label>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="t-title">Ad-targeting & sharing</div>
+        <div class="t-desc">Uses your activity for targeted ads and shares data with ad partners.</div>
+        <span class="tag">Off by default · opt-in</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="tg-ads"><span class="slider-el"></span></label>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('adult-3')">Save & continue</button>
+  </div>
+
+  <div id="adult-3" class="screen center-text">
+    <div class="spacer"></div>
+    <div class="center-icon">✓</div>
+    <h2>You're all set, Ananya</h2>
+    <p class="desc">Personalization: <span class="badge-on" id="summary-personal">On</span> &nbsp;·&nbsp; Ad-targeting: <span class="badge-off" id="summary-ads">Off</span></p>
+    <div class="banner"><span class="b-icon">🔒</span><span>Manage or withdraw any of these anytime from <b>Privacy &amp; Data</b> in Settings — no need to contact support.</span></div>
+    <div class="spacer"></div>
+    <button class="btn secondary" onclick="go('adult-1')">↺ Restart journey</button>
+  </div>
+
+  <!-- ================= MINOR JOURNEY ================= -->
+  <div id="minor-1" class="screen active">
+    <div class="logo"><div class="dot">♫</div><span>Spotify</span></div>
+    <div class="stepbar"><div class="done"></div><div></div><div></div><div></div></div>
+    <h2>You've been invited!</h2>
+    <p class="desc"><b>Vikram Mehta</b> invited you to join the Mehta Family Plan.</p>
+    <div class="field"><label>Your email</label><input type="text" value="rohan.mehta@gmail.com" readonly></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('minor-2')">Accept invite</button>
+  </div>
+
+  <div id="minor-2" class="screen">
+    <div class="logo"><div class="dot">♫</div><span>Spotify</span></div>
+    <div class="stepbar"><div class="done"></div><div class="done"></div><div></div><div></div></div>
+    <div class="spacer" style="flex:0.3"></div>
+    <div class="center-icon dark">🎂</div>
+    <h2 style="text-align:center">One quick question</h2>
+    <p class="desc" style="text-align:center">This helps us keep your account safe and DPDP-compliant.</p>
+    <p style="text-align:center; font-weight:600; margin-bottom:6px;">Are you under 18 years old?</p>
+    <div class="yn-row">
+      <button onclick="go('adult-2')">No, I'm 18+</button>
+      <button onclick="go('minor-3')" style="border-color: var(--green); color: var(--green);">Yes, I'm under 18</button>
+    </div>
+    <p class="desc" style="text-align:center; font-size:10.5px;">(This prototype's happy path continues via "Yes")</p>
+  </div>
+
+  <div id="minor-3" class="screen">
+    <div class="logo"><div class="dot">♫</div><span>Spotify</span></div>
+    <div class="stepbar"><div class="done"></div><div class="done"></div><div class="done"></div><div></div></div>
+    <h2>Verify with a parent</h2>
+    <p class="desc">We've sent a code to <b>Vikram Mehta's</b> verified number ending in <b>••42</b> to confirm consent for Rohan's account.</p>
+    <div class="otp-boxes">
+      <input maxlength="1" value="4"><input maxlength="1" value="8"><input maxlength="1" value="1"><input maxlength="1" value="9">
+    </div>
+    <div class="banner"><span class="b-icon">👪</span><span>Verifying an already-registered adult number meets DPDP's "reasonable verification" bar without needing document uploads.</span></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('minor-4')">Verify & continue</button>
+  </div>
+
+  <div id="minor-4" class="screen center-text">
+    <div class="spacer"></div>
+    <div class="center-icon">✓</div>
+    <h2>Welcome, Rohan</h2>
+    <p class="desc">Parental consent verified. As a protected account:</p>
+    <div class="toggle-row" style="text-align:left;">
+      <div>
+        <div class="t-title">Ad-targeting & tracking</div>
+        <div class="t-desc">Automatically disabled — DPDP prohibits targeted ads and profiling of minors.</div>
+      </div>
+      <label class="switch"><input type="checkbox" disabled><span class="slider-el"></span></label>
+    </div>
+    <div class="banner"><span class="b-icon">🔒</span><span>Vikram can review or revoke this consent anytime from the Family Plan settings.</span></div>
+    <div class="spacer"></div>
+    <button class="btn secondary" onclick="go('minor-1')">↺ Restart journey</button>
+  </div>
+
+</div>
+
+<div class="footlink" onclick="window.scrollTo(0,0)">Spotify × DPDP Act, 2023 — Clickable Prototype · Deliverable 2</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'adult-3') {
+    const p = document.getElementById('tg-personalization').checked;
+    const a = document.getElementById('tg-ads').checked;
+    document.getElementById('summary-personal').textContent = p ? 'On' : 'Off';
+    document.getElementById('summary-personal').className = p ? 'badge-on' : 'badge-off';
+    document.getElementById('summary-ads').textContent = a ? 'On' : 'Off';
+    document.getElementById('summary-ads').className = a ? 'badge-on' : 'badge-off';
+  }
+}
+function switchJourney(which) {
+  document.getElementById('btn-adult').classList.toggle('active', which === 'adult');
+  document.getElementById('btn-minor').classList.toggle('active', which === 'minor');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(which === 'adult' ? 'adult-1' : 'minor-1').classList.add('active');
+}
+</script>
+
+</body>
+</html>
